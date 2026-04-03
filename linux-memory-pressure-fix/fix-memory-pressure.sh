@@ -86,18 +86,29 @@ setup_swap() {
         return
     fi
 
+    local fs_type
+    fs_type=$(df -T "$(dirname "$SWAP_FILE")" | awk 'NR==2 {print $2}')
+
     if $DRY_RUN; then
-        dry "fallocate -l ${SWAP_SIZE} ${SWAP_FILE}"
-        dry "chmod 600 ${SWAP_FILE}"
-        dry "mkswap ${SWAP_FILE}"
+        if [[ "$fs_type" == "btrfs" ]]; then
+            dry "btrfs filesystem mkswapfile --size ${SWAP_SIZE} ${SWAP_FILE}"
+        else
+            dry "fallocate -l ${SWAP_SIZE} ${SWAP_FILE}"
+            dry "chmod 600 ${SWAP_FILE}"
+            dry "mkswap ${SWAP_FILE}"
+        fi
         dry "swapon ${SWAP_FILE}"
         dry "Add ${SWAP_FILE} to /etc/fstab"
         return
     fi
 
-    fallocate -l "${SWAP_SIZE}" "${SWAP_FILE}"
-    chmod 600 "${SWAP_FILE}"
-    mkswap "${SWAP_FILE}"
+    if [[ "$fs_type" == "btrfs" ]]; then
+        btrfs filesystem mkswapfile --size "${SWAP_SIZE}" "${SWAP_FILE}"
+    else
+        fallocate -l "${SWAP_SIZE}" "${SWAP_FILE}"
+        chmod 600 "${SWAP_FILE}"
+        mkswap "${SWAP_FILE}"
+    fi
     swapon "${SWAP_FILE}"
     ensure_fstab_entry
 

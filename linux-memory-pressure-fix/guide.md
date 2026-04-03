@@ -54,6 +54,15 @@ sudo ./fix-memory-pressure.sh --swappiness 50
 
 ### 1. Create a disk-backed swap file
 
+**On btrfs** (Fedora default):
+
+```bash
+sudo btrfs filesystem mkswapfile --size 8G /swapfile
+sudo swapon /swapfile
+```
+
+**On ext4/xfs**:
+
 ```bash
 sudo fallocate -l 8G /swapfile
 sudo chmod 600 /swapfile
